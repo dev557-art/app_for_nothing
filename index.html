@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Signal</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -419,7 +420,6 @@
    // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, onSnapshot, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
   // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
@@ -435,6 +435,16 @@
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
+
+  // Initialize OneSignal
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "57581297-8ea9-48c7-9fa6-0e7a489e6c36",
+      notifyButton: { enable: false },
+    });
+    await OneSignal.Slidedown.promptPush();
+  });
 
   const colors = {
     red:    { dot: '#E53E3E', card: 'rgba(229,62,62,0.08)',  border: 'rgba(229,62,62,0.25)'  },
@@ -457,12 +467,24 @@
 
     // Send to Firebase
     const myName = localStorage.getItem('signal_username') || 'Someone';
-await addDoc(collection(db, 'signals'), {
-  type:      type,
-  label:     label,
-  from:      myName,
-  timestamp: Date.now()
-});
+    await addDoc(collection(db, 'signals'), {
+      type:      type,
+      label:     label,
+      from:      myName,
+      timestamp: Date.now()
+    });
+
+    // Send push notification via OneSignal
+    await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_id: "57581297-8ea9-48c7-9fa6-0e7a489e6c36",
+        included_segments: ["All"],
+        contents: { en: label },
+        headings: { en: (localStorage.getItem('signal_username') || 'Your friend') + " sent a signal" },
+      }),
+    });
 
     showToast('Signal sent to your friend');
   }
@@ -505,6 +527,7 @@ onSnapshot(q, (snapshot) => {
 function saveName() {
   const input = document.getElementById('nameInput').value.trim();
   if (!input) return;
+  localStorage.setItem('signal_username', input);
   document.getElementById('nameOverlay').style.display = 'none';
 }
 
@@ -512,6 +535,11 @@ function saveName() {
 document.getElementById('nameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') saveName();
 });
+
+// If name already saved, skip the prompt
+if (localStorage.getItem('signal_username')) {
+  document.getElementById('nameOverlay').style.display = 'none';
+}
 
   // Toast helper
   window.showToast = function(msg) {
