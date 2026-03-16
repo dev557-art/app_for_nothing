@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Signal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --red:        #E53E3E;
+      --red-bg:     #FFF5F5;
+      --red-border: #FEB2B2;
+      --red-text:   #9B2C2C;
+
+      --yellow:        #D69E2E;
+      --yellow-bg:     #FFFFF0;
+      --yellow-border: #FAF089;
+      --yellow-text:   #744210;
+
+      --green:        #38A169;
+      --green-bg:     #F0FFF4;
+      --green-border: #9AE6B4;
+      --green-text:   #22543D;
+
+      --bg:         #0F0F0F;
+      --surface:    #1A1A1A;
+      --surface2:   #222222;
+      --border:     #2A2A2A;
+      --text:       #F5F5F5;
+      --text-muted: #777;
+      --text-dim:   #444;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 390px;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 48px 24px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .headline {
+      font-size: 28px;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+
+
+    
+    .headline span {
+      font-weight: 600;
+    }
+
+    /* Status card */
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.4s, background 0.4s;
+    }
+
+    .status-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .status-eyebrow {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: color 0.4s;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+
+    /* Signal Buttons */
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: auto;
+    }
+
+    .signal-btn {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: background 0.2s, border-color 0.2s, transform 0.12s;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+      border-radius: inherit;
+    }
+
+    .signal-btn:active::after { opacity: 0.04; }
+    .signal-btn:active { transform: scale(0.985); }
+
+    .signal-btn:hover {
+      border-color: #333;
+      background: var(--surface2);
+    }
+
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .btn-red   .btn-icon { background: rgba(229, 62, 62, 0.12); }
+    .btn-yellow .btn-icon { background: rgba(214, 158, 46, 0.12); }
+    .btn-green  .btn-icon { background: rgba(56, 161, 105, 0.12); }
+
+    .btn-body { flex: 1; }
+
+    .btn-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .btn-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-arrow {
+      color: var(--text-dim);
+      font-size: 18px;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .signal-btn:hover .btn-arrow {
+      color: var(--text-muted);
+      transform: translateX(2px);
+    }
+
+    /* Recent signals */
+    .recent {
+      margin-top: 28px;
+    }
+
+    .recent-label {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .feed-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .feed-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .feed-time {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.02em;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+<!-- Name prompt overlay -->
+<div id="nameOverlay" style="
+  position: fixed; inset: 0;
+  background: #0F0F0F;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 24px;
+  z-index: 100;
+">
+  <p style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#444; margin-bottom:12px;">First time setup</p>
+  <h2 style="font-size:24px; font-weight:300; color:#F5F5F5; margin-bottom:32px; text-align:center;">What should we <span style="font-weight:600;">call you?</span></h2>
+  <input id="nameInput" type="text" placeholder="Your name" style="
+    width: 100%;
+    max-width: 280px;
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 16px;
+    color: #F5F5F5;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    margin-bottom: 12px;
+  "/>
+  <button onclick="saveName()" style="
+    width: 100%;
+    max-width: 280px;
+    background: #F5F5F5;
+    color: #0F0F0F;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  ">Let's go</button>
+</div>
+  <!-- Header -->
+  <div class="header">
+    <h1 class="headline">How are you <span>feeling?</span></h1>
+  </div>
+
+  <!-- Current status -->
+  <div class="status-card" id="statusCard">
+    <div class="status-left">
+      <span class="status-eyebrow">Your status</span>
+      <span class="status-value" id="statusValue">Nothing sent yet</span>
+    </div>
+    <div class="status-indicator" id="statusDot"></div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="buttons">
+
+    <button class="signal-btn btn-red" onclick="sendSignal('red', 'Conflict risen', 'Something needs to be addressed')">
+      <div class="btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#E53E3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="btn-body">
+        <div class="btn-title" style="color:#E53E3E;">Conflict risen</div>
+        <div class="btn-sub">Sumthing iz wrong</div>
+      </div>
+      <span class="btn-arrow">›</span>
+    </button>
+
+    <button class="signal-btn btn-yellow" onclick="sendSignal('yellow', 'Not convinced', 'I hear you, but not fully on board')">
+      <div class="btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D69E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9 9h.01M15 9h.01"/>
+          <path d="M9 15h6"/>
+        </svg>
+      </div>
+      <div class="btn-body">
+        <div class="btn-title" style="color:#D69E2E;">Not convinced</div>
+        <div class="btn-sub">Address dis issue</div>
+      </div>
+      <span class="btn-arrow">›</span>
+    </button>
+
+    <button class="signal-btn btn-green" onclick="sendSignal('green', 'Conflict solved', 'We\'re good now')">
+      <div class="btn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#38A169" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </div>
+      <div class="btn-body">
+        <div class="btn-title" style="color:#38A169;">Conflict solved</div>
+        <div class="btn-sub">We are good now.</div>
+      </div>
+      <span class="btn-arrow">›</span>
+    </button>
+
+  </div>
+
+  <!-- Recent signals from friend -->
+  <div class="recent">
+    <div class="recent-label">From your friend</div>
+    <div class="feed" id="feed">
+      <div class="feed-item">
+        <span class="feed-dot" style="background:#444;"></span>
+        <span class="feed-text" style="color:#444;">No signals yet</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+   // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDVxfUM4AWZ9O-qM9hN1GG9pOYJoht5aWw",
+    authDomain: "signal-app-b8e7d.firebaseapp.com",
+    projectId: "signal-app-b8e7d",
+    storageBucket: "signal-app-b8e7d.firebasestorage.app",
+    messagingSenderId: "557798528846",
+    appId: "1:557798528846:web:e94dc2dda318a01437b01f",
+    measurementId: "G-G1B5DPC2DW"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const colors = {
+    red:    { dot: '#E53E3E', card: 'rgba(229,62,62,0.08)',  border: 'rgba(229,62,62,0.25)'  },
+    yellow: { dot: '#D69E2E', card: 'rgba(214,158,46,0.08)', border: 'rgba(214,158,46,0.25)' },
+    green:  { dot: '#38A169', card: 'rgba(56,161,105,0.08)', border: 'rgba(56,161,105,0.25)' },
+  };
+
+  window.sendSignal = async function(type, label) {
+    const card = document.getElementById('statusCard');
+    const val  = document.getElementById('statusValue');
+    const dot  = document.getElementById('statusDot');
+    const c    = colors[type];
+
+    val.textContent        = label;
+    val.style.color        = c.dot;
+    dot.style.background   = c.dot;
+    dot.style.boxShadow    = `0 0 0 4px ${c.border}`;
+    card.style.borderColor = c.border;
+    card.style.background  = c.card;
+
+    // Send to Firebase
+    const myName = localStorage.getItem('signal_username') || 'Someone';
+await addDoc(collection(db, 'signals'), {
+  type:      type,
+  label:     label,
+  from:      myName,
+  timestamp: Date.now()
+});
+
+    showToast('Signal sent to your friend');
+  }
+
+  // This listens for signals from your friend in real time
+
+
+  // Show name in feed items
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  return Math.floor(diff / 3600) + 'h ago';
+}
+
+// Update feed to show sender name
+const q = query(collection(db, 'signals'), orderBy('timestamp', 'desc'));
+onSnapshot(q, (snapshot) => {
+  const feed = document.getElementById('feed');
+  feed.innerHTML = '';
+  if (snapshot.empty) {
+    feed.innerHTML = '<div class="feed-item"><span class="feed-text" style="color:#444;">No signals yet</span></div>';
+    return;
+  }
+  snapshot.docs.slice(0, 5).forEach(doc => {
+    const d = doc.data();
+    const c = colors[d.type];
+    const item = document.createElement('div');
+    item.className = 'feed-item';
+    item.innerHTML = `
+      <span class="feed-dot" style="background:${c.dot};"></span>
+      <span class="feed-text">${d.label} <span style="color:#444;">· ${d.from}</span></span>
+      <span class="feed-time">${timeAgo(d.timestamp)}</span>
+    `;
+    feed.appendChild(item);
+  });
+});
+
+// Name setup logic
+function saveName() {
+  const input = document.getElementById('nameInput').value.trim();
+  if (!input) return;
+  document.getElementById('nameOverlay').style.display = 'none';
+}
+
+// Allow pressing Enter to confirm name
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveName();
+});
+
+  // Toast helper
+  window.showToast = function(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+  };
+</script>
+
+</body>
+</html>

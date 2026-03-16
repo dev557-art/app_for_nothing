@@ -1,0 +1,14 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Open signal-app(1).html",
+            "file": "c:\\Users\\Sreedhar\\PycharmProjects\\app_for_nothing\\signal-app(1).html"
+        }
+    ]
+}
