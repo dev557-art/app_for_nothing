@@ -85,11 +85,58 @@
       letter-spacing: -0.02em;
     }
 
-
-
-    
     .headline span {
       font-weight: 600;
+    }
+
+    /* Notification permission banner */
+    .notif-banner {
+      background: rgba(56, 161, 105, 0.08);
+      border: 1px solid rgba(56, 161, 105, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .notif-banner:hover {
+      background: rgba(56, 161, 105, 0.12);
+      border-color: rgba(56, 161, 105, 0.35);
+    }
+
+    .notif-banner-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .notif-banner-text {
+      flex: 1;
+    }
+
+    .notif-banner-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #38A169;
+      margin-bottom: 1px;
+    }
+
+    .notif-banner-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .notif-banner-close {
+      color: var(--text-dim);
+      font-size: 16px;
+      padding: 4px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      line-height: 1;
     }
 
     /* Status card */
@@ -219,6 +266,12 @@
       transform: translateX(2px);
     }
 
+    /* Sending state */
+    .signal-btn.sending {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
     /* Recent signals */
     .recent {
       margin-top: 28px;
@@ -297,49 +350,61 @@
 <body>
 
 <div class="app">
-<!-- Name prompt overlay -->
-<div id="nameOverlay" style="
-  position: fixed; inset: 0;
-  background: #0F0F0F;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 24px;
-  z-index: 100;
-">
-  <p style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#444; margin-bottom:12px;">First time setup</p>
-  <h2 style="font-size:24px; font-weight:300; color:#F5F5F5; margin-bottom:32px; text-align:center;">What should we <span style="font-weight:600;">call you?</span></h2>
-  <input id="nameInput" type="text" placeholder="Your name" style="
-    width: 100%;
-    max-width: 280px;
-    background: #1A1A1A;
-    border: 1px solid #2A2A2A;
-    border-radius: 12px;
-    padding: 14px 18px;
-    font-size: 16px;
-    color: #F5F5F5;
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    margin-bottom: 12px;
-  "/>
-  <button onclick="saveName()" style="
-    width: 100%;
-    max-width: 280px;
-    background: #F5F5F5;
-    color: #0F0F0F;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 500;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-  ">Let's go</button>
-</div>
+
+  <!-- Name prompt overlay -->
+  <div id="nameOverlay" style="
+    position: fixed; inset: 0;
+    background: #0F0F0F;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 24px;
+    z-index: 100;
+  ">
+    <p style="font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#444; margin-bottom:12px;">First time setup</p>
+    <h2 style="font-size:24px; font-weight:300; color:#F5F5F5; margin-bottom:32px; text-align:center;">What should we <span style="font-weight:600;">call you?</span></h2>
+    <input id="nameInput" type="text" placeholder="Your name" style="
+      width: 100%;
+      max-width: 280px;
+      background: #1A1A1A;
+      border: 1px solid #2A2A2A;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 16px;
+      color: #F5F5F5;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      margin-bottom: 12px;
+    "/>
+    <button onclick="saveName()" style="
+      width: 100%;
+      max-width: 280px;
+      background: #F5F5F5;
+      color: #0F0F0F;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    ">Let's go</button>
+  </div>
+
   <!-- Header -->
   <div class="header">
     <h1 class="headline">How are you <span>feeling?</span></h1>
+  </div>
+
+  <!-- Notification permission banner (shown if not yet granted) -->
+  <div class="notif-banner" id="notifBanner" style="display:none;" onclick="requestNotifPermission()">
+    <span class="notif-banner-icon">🔔</span>
+    <div class="notif-banner-text">
+      <div class="notif-banner-title">Enable notifications</div>
+      <div class="notif-banner-sub">Get alerted when your friend sends a signal</div>
+    </div>
+    <button class="notif-banner-close" onclick="event.stopPropagation(); dismissNotifBanner()">✕</button>
   </div>
 
   <!-- Current status -->
@@ -354,7 +419,7 @@
   <!-- Buttons -->
   <div class="buttons">
 
-    <button class="signal-btn btn-red" onclick="sendSignal('red', 'Conflict risen', 'Something needs to be addressed')">
+    <button class="signal-btn btn-red" id="btn-red" onclick="sendSignal('red', 'Conflict risen', 'Something needs to be addressed')">
       <div class="btn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="#E53E3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -369,7 +434,7 @@
       <span class="btn-arrow">›</span>
     </button>
 
-    <button class="signal-btn btn-yellow" onclick="sendSignal('yellow', 'Not convinced', 'I hear you, but not fully on board')">
+    <button class="signal-btn btn-yellow" id="btn-yellow" onclick="sendSignal('yellow', 'Not convinced', 'I hear you, but not fully on board')">
       <div class="btn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="#D69E2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -384,7 +449,7 @@
       <span class="btn-arrow">›</span>
     </button>
 
-    <button class="signal-btn btn-green" onclick="sendSignal('green', 'Conflict solved', 'We\'re good now')">
+    <button class="signal-btn btn-green" id="btn-green" onclick="sendSignal('green', 'Conflict solved', 'We\'re good now')">
       <div class="btn-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="#38A169" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -417,11 +482,9 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, onSnapshot, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
   const firebaseConfig = {
     apiKey: "AIzaSyDVxfUM4AWZ9O-qM9hN1GG9pOYJoht5aWw",
     authDomain: "signal-app-b8e7d.firebaseapp.com",
@@ -432,32 +495,71 @@
     measurementId: "G-G1B5DPC2DW"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
 
-  // Initialize OneSignal
+  // ─── OneSignal Setup ───────────────────────────────────────────────────────
+  const ONESIGNAL_APP_ID = "57581297-8ea9-48c7-9fa6-0e7a489e6c36";
+
+  // NOTE: The REST API key below is your OneSignal REST API key.
+  // You can find it in OneSignal Dashboard → Settings → Keys & IDs.
+  // Replace the placeholder with your actual key for push to work.
+  const ONESIGNAL_REST_API_KEY = "57581297-8ea9-48c7-9fa6-0e7a489e6c36";
+
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "57581297-8ea9-48c7-9fa6-0e7a489e6c36",
+      appId: ONESIGNAL_APP_ID,
       notifyButton: { enable: false },
     });
-    await OneSignal.Slidedown.promptPush();
+
+    // Check permission state and show banner if not yet decided
+    const permission = await OneSignal.Notifications.permissionNative;
+    if (permission === 'default') {
+      showNotifBanner();
+    }
   });
 
+  // Show / hide the notification permission banner
+  function showNotifBanner() {
+    const banner = document.getElementById('notifBanner');
+    if (banner && localStorage.getItem('notif_banner_dismissed') !== '1') {
+      banner.style.display = 'flex';
+    }
+  }
+
+  window.dismissNotifBanner = function() {
+    localStorage.setItem('notif_banner_dismissed', '1');
+    document.getElementById('notifBanner').style.display = 'none';
+  };
+
+  window.requestNotifPermission = async function() {
+    try {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.Slidedown.promptPush();
+        document.getElementById('notifBanner').style.display = 'none';
+      });
+    } catch(e) {
+      console.warn('Push permission error:', e);
+    }
+  };
+
+  // ─── Colors ───────────────────────────────────────────────────────────────
   const colors = {
     red:    { dot: '#E53E3E', card: 'rgba(229,62,62,0.08)',  border: 'rgba(229,62,62,0.25)'  },
     yellow: { dot: '#D69E2E', card: 'rgba(214,158,46,0.08)', border: 'rgba(214,158,46,0.25)' },
     green:  { dot: '#38A169', card: 'rgba(56,161,105,0.08)', border: 'rgba(56,161,105,0.25)' },
   };
 
+  // ─── Send Signal ──────────────────────────────────────────────────────────
   window.sendSignal = async function(type, label) {
     const card = document.getElementById('statusCard');
     const val  = document.getElementById('statusValue');
     const dot  = document.getElementById('statusDot');
+    const btn  = document.getElementById('btn-' + type);
     const c    = colors[type];
 
+    // Update local status card
     val.textContent        = label;
     val.style.color        = c.dot;
     dot.style.background   = c.dot;
@@ -465,83 +567,103 @@
     card.style.borderColor = c.border;
     card.style.background  = c.card;
 
-    // Send to Firebase
+    // Visual feedback on button
+    if (btn) btn.classList.add('sending');
+
     const myName = localStorage.getItem('signal_username') || 'Someone';
-    await addDoc(collection(db, 'signals'), {
-      type:      type,
-      label:     label,
-      from:      myName,
-      timestamp: Date.now()
-    });
 
-    // Send push notification via OneSignal
-    await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        app_id: "57581297-8ea9-48c7-9fa6-0e7a489e6c36",
-        included_segments: ["All"],
-        contents: { en: label },
-        headings: { en: (localStorage.getItem('signal_username') || 'Your friend') + " sent a signal" },
-      }),
-    });
+    try {
+      // 1. Write to Firebase (so the feed updates for both users)
+      await addDoc(collection(db, 'signals'), {
+        type:      type,
+        label:     label,
+        from:      myName,
+        timestamp: Date.now()
+      });
 
-    showToast('Signal sent to your friend');
+      // 2. Send push notification via OneSignal REST API
+      //    This sends to ALL subscribed users (i.e. your friend's device).
+      //    Requires your REST API key in ONESIGNAL_REST_API_KEY above.
+      const notifRes = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+        },
+        body: JSON.stringify({
+          app_id:            ONESIGNAL_APP_ID,
+          included_segments: ["All"],
+          headings:  { en: `${myName} sent a signal` },
+          contents:  { en: label },
+          // Small icon colour tinted by signal type
+          android_accent_color: c.dot.replace('#', ''),
+        }),
+      });
+
+      if (!notifRes.ok) {
+        const err = await notifRes.json();
+        console.warn('OneSignal error:', err);
+        // Still show success to user — Firebase write succeeded
+        showToast('Signal sent ✓  (check REST key for push)');
+      } else {
+        showToast('Signal sent to your friend');
+      }
+
+    } catch (e) {
+      console.error('sendSignal error:', e);
+      showToast('Signal sent locally');
+    } finally {
+      if (btn) btn.classList.remove('sending');
+    }
+  };
+
+  // ─── Live Feed ────────────────────────────────────────────────────────────
+  function timeAgo(ts) {
+    const diff = Math.floor((Date.now() - ts) / 1000);
+    if (diff < 60)   return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    return Math.floor(diff / 3600) + 'h ago';
   }
 
-  // This listens for signals from your friend in real time
-
-
-  // Show name in feed items
-function timeAgo(ts) {
-  const diff = Math.floor((Date.now() - ts) / 1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  return Math.floor(diff / 3600) + 'h ago';
-}
-
-// Update feed to show sender name
-const q = query(collection(db, 'signals'), orderBy('timestamp', 'desc'));
-onSnapshot(q, (snapshot) => {
-  const feed = document.getElementById('feed');
-  feed.innerHTML = '';
-  if (snapshot.empty) {
-    feed.innerHTML = '<div class="feed-item"><span class="feed-text" style="color:#444;">No signals yet</span></div>';
-    return;
-  }
-  snapshot.docs.slice(0, 5).forEach(doc => {
-    const d = doc.data();
-    const c = colors[d.type];
-    const item = document.createElement('div');
-    item.className = 'feed-item';
-    item.innerHTML = `
-      <span class="feed-dot" style="background:${c.dot};"></span>
-      <span class="feed-text">${d.label} <span style="color:#444;">· ${d.from}</span></span>
-      <span class="feed-time">${timeAgo(d.timestamp)}</span>
-    `;
-    feed.appendChild(item);
+  const q = query(collection(db, 'signals'), orderBy('timestamp', 'desc'));
+  onSnapshot(q, (snapshot) => {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+    if (snapshot.empty) {
+      feed.innerHTML = '<div class="feed-item"><span class="feed-text" style="color:#444;">No signals yet</span></div>';
+      return;
+    }
+    snapshot.docs.slice(0, 5).forEach(doc => {
+      const d = doc.data();
+      const c = colors[d.type];
+      const item = document.createElement('div');
+      item.className = 'feed-item';
+      item.innerHTML = `
+        <span class="feed-dot" style="background:${c.dot};"></span>
+        <span class="feed-text">${d.label} <span style="color:#444;">· ${d.from}</span></span>
+        <span class="feed-time">${timeAgo(d.timestamp)}</span>
+      `;
+      feed.appendChild(item);
+    });
   });
-});
 
-// Name setup logic
-function saveName() {
-  const input = document.getElementById('nameInput').value.trim();
-  if (!input) return;
-  localStorage.setItem('signal_username', input);
-  document.getElementById('nameOverlay').style.display = 'none';
-}
+  // ─── Name Setup ───────────────────────────────────────────────────────────
+  window.saveName = function() {
+    const input = document.getElementById('nameInput').value.trim();
+    if (!input) return;
+    localStorage.setItem('signal_username', input);
+    document.getElementById('nameOverlay').style.display = 'none';
+  };
 
-// Allow pressing Enter to confirm name
-document.getElementById('nameInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveName();
-});
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveName();
+  });
 
-// If name already saved, skip the prompt
-if (localStorage.getItem('signal_username')) {
-  document.getElementById('nameOverlay').style.display = 'none';
-}
+  if (localStorage.getItem('signal_username')) {
+    document.getElementById('nameOverlay').style.display = 'none';
+  }
 
-  // Toast helper
+  // ─── Toast ────────────────────────────────────────────────────────────────
   window.showToast = function(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
